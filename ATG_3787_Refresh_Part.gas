@@ -1,0 +1,53 @@
+Program.Sub.ScreenSU.Start
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: CHANDANA
+'Project Start Date: 10/5/2011
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+V.Local.sSql.Declare(String)
+V.Local.sPart.Declare(String)
+V.Local.sDesc.Declare(String)
+V.Local.iCt.Declare(Long,0)
+V.Local.iPartCount.Declare(Long)
+
+V.Local.sSql.Set("select count(part) as PCount from INVENTORY_MSTR")
+F.ODBC.Connection!Con.OpenLocalRecordsetRO("rstCount",V.Local.sSql)
+	V.Local.iPartCount.Set(V.ODBC.Con!rstCount.FieldVal!PCount)
+F.ODBC.Con!rstCount.Close
+
+F.Intrinsic.UI.InvokeWaitDialog("Refreshing Part Description . . .","Update Part Description")
+
+V.Local.sSql.Set("select Part, Description from INVENTORY_MSTR order by Part")
+F.ODBC.Connection!Con.OpenLocalRecordsetRO("rst",V.Local.sSql)
+F.Intrinsic.Control.DoUntil(V.ODBC.Con!rst.EOF,=,True)
+	F.Intrinsic.Math.Add(V.Local.iCt,1,V.Local.iCt)
+	V.Local.sPart.Set(V.ODBC.Con!rst.FieldVal!Part)
+	V.Local.sDesc.Set(V.ODBC.Con!rst.FieldVal!Description)
+	F.Intrinsic.UI.ChangeWaitStatus("Refreshing Part Description . . .",V.Local.iCt,0,V.Local.iPartCount)
+	F.Intrinsic.String.concat("select Part, Description from QUOTE_LINES where Part='",V.Local.spart,"'",V.Local.sSql)
+	F.ODBC.Connection!Con.OpenLocalRecordsetRW("rstDesc",V.Local.sSql)
+	F.Intrinsic.Control.DoUntil(V.ODBC.Con!rstDesc.EOF,=,True)
+		F.ODBC.Con!rstDesc.Set!Description(V.Local.sDesc)
+		F.ODBC.Con!rstDesc.Update
+		F.ODBC.Con!rstDesc.MoveNext
+	F.Intrinsic.Control.Loop
+	F.ODBC.Con!rstDesc.Close
+	F.ODBC.Con!rst.MoveNext
+F.Intrinsic.Control.Loop
+F.ODBC.Con!rst.Close
+
+F.Intrinsic.UI.CloseWaitDialog
+
+F.ODBC.Connection!Con.close
+
+F.Intrinsic.UI.Msgbox("Part Description for Quote Lines were updated","Update Part Description")
+
+Program.Sub.Main.End
+
+
